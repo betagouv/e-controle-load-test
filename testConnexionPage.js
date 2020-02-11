@@ -24,5 +24,5 @@ export default function() {
   if (!success) {
     errorCounterDuration.add(1)
   }
-  sleep(2)
+  sleep(5)
 }
