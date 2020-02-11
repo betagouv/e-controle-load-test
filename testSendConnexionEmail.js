@@ -18,7 +18,7 @@ export let options = {
 
 export default function() {
   let res = http.get(serverUrl)
-  let formCsrf = getCsrf(serverUrl)
+  let formCsrf = getCsrf(res)
   res = res.submitForm({ 
     fields: { 
       email: sendEmailTo,
