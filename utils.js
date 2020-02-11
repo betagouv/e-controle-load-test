@@ -1,5 +1,6 @@
+import { Counter, Rate } from 'k6/metrics'
+import { sleep, check, fail } from 'k6'
 import http from 'k6/http'
-import { fail } from 'k6'
 
 
 const username = `${__ENV.K6_WEB_USER}`
@@ -7,6 +8,11 @@ const password = `${__ENV.K6_WEB_PASSWORD}`
 const serverUrl = `${__ENV.K6_HOST}`
 const adminPath = `${__ENV.K6_ADMIN_PATH}`
 const loginUrl = serverUrl + adminPath + 'login/'
+
+const errorCounter200 = new Counter('errors_status_200_OK')
+const errorCounterTransactionTime = new Counter('errors_transaction_time_OK')
+const rateStatus200 = new Rate('rate_status_200_OK')
+const rateTransactionTime = new Rate('rate_transaction_time_OK')
 
 
 export function getCsrf(httpResponse) {
@@ -25,9 +31,9 @@ export function getCsrf(httpResponse) {
 
 export function login() {
   console.log('Start login process')
-  let res = http.get(loginUrl)
-  const formCsrf = getCsrf(res)
-  res = res.submitForm({ 
+  let response = http.get(loginUrl)
+  const formCsrf = getCsrf(response)
+  response = response.submitForm({ 
     fields: {
       csrfmiddlewaretoken: formCsrf,
       username: username,
@@ -37,6 +43,22 @@ export function login() {
     submitSelector: "submit" 
   })
   console.log('Making login request')
-  console.debug('Response cookies', JSON.stringify(res.cookies))
+  console.debug('Response cookies', JSON.stringify(response.cookies))
   console.log('Done with login process.')
+}
+
+
+export function visitPage(PageUrl, sleepDurationSeconds=5) {
+  const response = http.get(PageUrl)
+  let success = check(response, { 'status 200 OK': (r) => r.status === 200 })
+  rateStatus200.add(success)
+  if (!success) {
+    errorCounter200.add(1)
+  }
+  success = check(response, { 'transaction time OK': (r) => r.timings.duration < 1000 })
+  rateTransactionTime.add(success)
+  if (!success) {
+    errorCounterTransactionTime.add(1)
+  }
+  sleep(sleepDurationSeconds)
 }
