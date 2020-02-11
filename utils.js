@@ -49,7 +49,8 @@ export function login() {
 
 
 export function visitPage(PageUrl, sleepDurationSeconds=5) {
-  const response = http.get(PageUrl)
+  let params = {redirects: 0}
+  const response = http.get(PageUrl, params)
   let success = check(response, { 'status 200 OK': (r) => r.status === 200 })
   rateStatus200.add(success)
   if (!success) {
