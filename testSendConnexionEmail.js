@@ -8,8 +8,10 @@ const serverUrl = `${__ENV.K6_HOST}`
 const sendEmailTo = `${__ENV.K6_SEND_EMAIL_TO}`
 
 const errorCounter200 = new Counter('errors_status_200_OK')
+const errorCounterTransactionTime = new Counter('errors_transaction_time_OK')
 const rateStatus200 = new Rate('rate_status_200_OK')
-const errorCounterDuration = new Counter('errors_transaction_time_OK')
+const rateTransactionTime = new Rate('rate_transaction_time_OK')
+
 
 export let options = {
   vus: 150,
@@ -17,14 +19,24 @@ export let options = {
 }
 
 export default function() {
-  let res = http.get(serverUrl)
-  let formCsrf = getCsrf(res)
-  res = res.submitForm({ 
+  let response = http.get(serverUrl)
+  let formCsrf = getCsrf(response)
+  response = response.submitForm({ 
     fields: { 
       email: sendEmailTo,
       csrfmiddlewaretoken: formCsrf,
     },
     submitSelector: "submit" 
   })
-  sleep(150) // Pause for 2.5'min
+  let success = check(response, { 'status 200 OK': (r) => r.status === 200 })
+  rateStatus200.add(success)
+  if (!success) {
+    errorCounter200.add(1)
+  }
+  success = check(response, { 'transaction time OK': (r) => r.timings.duration < 1000 })
+  rateTransactionTime.add(success)
+  if (!success) {
+    errorCounterTransactionTime.add(1)
+  }
+  sleep(1) // Pause for 2.5'min
 }
