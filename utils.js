@@ -40,6 +40,11 @@ export function login() {
       password: password,
       next:'/',
     },
+    params: {
+      headers: {
+        Referer: loginUrl,
+      },
+    },
   })
   const ERROR_KEYWORD = 'error'
   let thisPageHasError = response.body.includes(ERROR_KEYWORD)
