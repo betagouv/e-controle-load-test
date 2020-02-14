@@ -1,4 +1,4 @@
-import { check, group, sleep } from 'k6'
+import { check, group, sleep, fail } from 'k6'
 import { Counter, Rate } from 'k6/metrics'
 import { login } from './utils.js'
 import { visitPage } from './utils.js'
@@ -27,5 +27,11 @@ export default function(data) {
         jar.set(serverUrl, key, data.cookies[key][0])
     })
   }
-  visitPage(serverUrl + 'accueil/')
+  let response = visitPage(serverUrl + 'accueil/')
+  const PAGE_KEYWORD = 'control-detail'
+  let thisIsTheControlPage = response.body.includes(PAGE_KEYWORD)
+  if (!thisIsTheControlPage) {
+    fail(`Test is probably not in the expected page. Keyword "${PAGE_KEYWORD}" not found in page content.`)
+
+  }
 }

@@ -40,17 +40,20 @@ export function login() {
       password: password,
       next:'/',
     },
-    submitSelector: "submit" 
   })
+  const ERROR_KEYWORD = 'error'
+  let thisPageHasError = response.body.includes(ERROR_KEYWORD)
+  if (thisPageHasError) {
+    fail(`Login probably failed. Found the keyword "${ERROR_KEYWORD}" in page content.`)
+  }
   console.log('Making login request')
   console.debug('Response cookies', JSON.stringify(response.cookies))
   console.log('Done with login process.')
 }
 
 
-export function visitPage(PageUrl, sleepDurationSeconds=5) {
-  let params = {redirects: 0}
-  const response = http.get(PageUrl, params)
+export function visitPage(pageUrl, sleepDurationSeconds=5) {
+  const response = http.get(pageUrl)
   let success = check(response, { 'status 200 OK': (r) => r.status === 200 })
   rateStatus200.add(success)
   if (!success) {
@@ -62,4 +65,5 @@ export function visitPage(PageUrl, sleepDurationSeconds=5) {
     errorCounterTransactionTime.add(1)
   }
   sleep(sleepDurationSeconds)
+  return response
 }
