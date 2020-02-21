@@ -13,11 +13,6 @@ const rateStatus200 = new Rate('rate_status_200_OK')
 const rateTransactionTime = new Rate('rate_transaction_time_OK')
 
 
-export let options = {
-  vus: 150,
-  duration: '5m',
-}
-
 export default function() {
   let response = http.get(serverUrl)
   let formCsrf = getCsrf(response)
@@ -26,7 +21,11 @@ export default function() {
       email: sendEmailTo,
       csrfmiddlewaretoken: formCsrf,
     },
-    submitSelector: "submit" 
+    params: {
+      headers: {
+        Referer: serverUrl,
+      },
+    },
   })
   let success = check(response, { 'status 200 OK': (r) => r.status === 200 })
   rateStatus200.add(success)
